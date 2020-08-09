@@ -18,6 +18,7 @@
     "extra": {
         "laravel": {
             "providers": [ 
+                "Armincms\\Categorizable\\CategorizableServiceProvider"
             ]
         }
     },
