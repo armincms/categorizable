@@ -2,29 +2,17 @@
 
 namespace Armincms\Categorizable;
  
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Contracts\Support\DeferrableProvider; 
+use Illuminate\Support\ServiceProvider; 
 
-class CategorizableServiceProvider extends ServiceProvider implements DeferrableProvider
+class CategorizableServiceProvider extends ServiceProvider 
 {  
-
     /**
-     * Register any application services.
+     * Define your route model bindings, pattern filters, etc.
      *
      * @return void
      */
-    public function register()
+    public function boot()
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-    }
-
-    /**
-     * Get the services provided by the provider.
-     *
-     * @return array
-     */
-    public function provides()
-    {
-        return ['migrator'];
-    }
+    } 
 }
