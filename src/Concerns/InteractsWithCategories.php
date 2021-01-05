@@ -3,7 +3,7 @@
 namespace Armincms\Categorizable\Concerns;
 
 
-trait HasCategory
+trait InteractsWithCategories
 {
 	/**
 	 * Query the related categories.
