@@ -2,38 +2,50 @@
 
 namespace Armincms\Categorizable;
 
-use Armincms\Concerns\Authorization;
-use Armincms\Concerns\IntractsWithMedia;
-use Armincms\Contracts\Authorizable; 
-use Armincms\Localization\Concerns\HasTranslation;
-use Armincms\Localization\Contracts\Translatable;  
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\{Model, SoftDeletes}; 
 use Spatie\MediaLibrary\HasMedia\HasMedia;
+use Armincms\Concerns\{HasConfig, HasMediaTrait, Authorization};  
+use Armincms\Targomaan\Concerns\InteractsWithTargomaan;
+use Armincms\Targomaan\Contracts\Translatable; 
+use Armincms\Contracts\Authorizable;  
 
 class Category extends Model implements Translatable, HasMedia, Authorizable 
 {
-    use HasTranslation, SoftDeletes, IntractsWithMedia, Authorization; 
+    use InteractsWithTargomaan, SoftDeletes, HasMediaTrait, Authorization, HasConfig; 
+    
+    const TRANSLATION_TABLE = 'categories_translations';
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-    	"config" => "json", 
-    ];
-
+    const LOCALE_KEY = 'language';
 
     protected $medias = [
-        'gallery' => [
-            'multiple' => true,
-            'disk' => 'armin.image',
-            'schemas' => [
-                'cover', 'logo', '*',
-            ],
+        'banner' => [  
+            'disk'  => 'armin.image',
+            'conversions' => [
+                'common'
+            ]
         ], 
-    ];
+
+        'logo' => [  
+            'disk'  => 'armin.image',
+            'conversions' => [
+                'common'
+            ]
+        ], 
+
+        'app_banner' => [  
+            'disk'  => 'armin.image',
+            'conversions' => [
+                'common'
+            ]
+        ], 
+
+        'app_logo' => [  
+            'disk'  => 'armin.image',
+            'conversions' => [
+                'common'
+            ]
+        ], 
+    ]; 
 
     /**
      * The "booting" method of the model.
@@ -43,22 +55,66 @@ class Category extends Model implements Translatable, HasMedia, Authorizable
     protected static function boot()
     {
         parent::boot(); 
-    }   
+    }  
 
     /**
-     * Get the translation database.
+     * Query the related category.
      * 
-     * @return string
+     * @return \Illuminate\Database\Eloqeunt\Relations\BelongsTo
      */
-    public function getTranslationTable()
+    public function parent()
+    { 
+        return $this->belongsTo(self::class, 'category_id');
+    }  
+
+    /**
+     * Query the related categories.
+     * 
+     * @return \Illuminate\Database\Eloqeunt\Relations\HasOneOrMany
+     */ 
+    public function categories()
     {
-        return 'categories_translations';
+        return $this->hasMany(self::class, 'category_id');
     } 
 
-    public function setConfigAttribute($config)
+    /**
+     * Query the related categories and sub categories.
+     * 
+     * @return \Illuminate\Database\Eloqeunt\Relations\HasOneOrMany
+     */
+    public function subCategories()
     { 
-        $this->attributes['config'] = collect($this->config)->whereNotIn(
-            'layout', collect($config)->pluck('layout')->all()
-        )->merge($config)->toJson(); 
+        return $this->categories()->tap(function($query) {
+            $query->with('subCategories');
+        });
+    }
+
+    /**
+     * Flatten all sub categories.
+     * 
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function flattenSubCategories()
+    { 
+        return $this->subCategories->flatMap(function($category) {
+            return $category->flattenSubCategories()->push($category);
+        });
+    }
+
+    // public function setConfigAttribute($config)
+    // { 
+    //     $this->attributes['config'] = collect($this->config)->whereNotIn(
+    //         'layout', collect($config)->pluck('layout')->all()
+    //     )->merge($config)->toJson(); 
+    // }
+
+    /**
+     * Driver name of the targomaan.
+     * 
+     * @return [type] [description]
+     */
+    public function translator(): string
+    {
+        return 'layeric';
     }
 }
