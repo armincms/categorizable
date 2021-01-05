@@ -2,9 +2,8 @@
 
 namespace Armincms\Categorizable;
  
-use Illuminate\Http\Request;
-use Laravel\Nova\Nova;
-
+use Illuminate\Http\Request; 
+use Armincms\Helpers\SharedResource;   
 
 class Helper
 {   
@@ -16,25 +15,17 @@ class Helper
      */
     public static function availableResources(Request $request)
     {
-        return collect(Nova::availableResources($request))->filter(function($resource) {
-            return collect(class_implements($resource::$model))->contains(Contracts\Categorizable::class);
-        });
+        return SharedResource::availableResources($request, Contracts\Categorizable::class);
     } 
 
     /**
      * Get meta data information about all resources for client side consumption.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @return array
+     * @return \Illuminate\Support\Collection
      */
     public static function resourceInformation(Request $request)
-    {
-        return static::availableResources($request)->map(function($resource) {
-            return [
-                'label' => $resource::label(),
-                'key'   => $resource::uriKey(), 
-                'model' => $resource::$model, 
-            ];
-        });
+    { 
+        return SharedResource::resourceInformation($request, Contracts\Categorizable::class);
     }
 }

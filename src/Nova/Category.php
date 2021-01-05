@@ -5,14 +5,14 @@ namespace Armincms\Categorizable\Nova;
 use Illuminate\Http\Request;
 use Laravel\Nova\Panel;
 use Laravel\Nova\Http\Requests\NovaRequest;
-use Laravel\Nova\Fields\{Text, Select, Textarea, BooleanGroup, BelongsTo};
+use Laravel\Nova\Fields\{Heading, Text, Select, Textarea, BooleanGroup, BelongsTo};
 use OptimistDigital\MultiselectField\Multiselect;
 use OwenMelbz\RadioField\RadioButton; 
 use Eminiarts\Tabs\Tabs;
 use Armincms\Nova\{Resource, Role};  
 use Armincms\Fields\Targomaan;
-use Armincms\Nova\Fields\Images;
-use Armincms\Categorizable\Helper; 
+use Armincms\Nova\Fields\Images; 
+use Armincms\Categorizable\Helper;
 use Zareismail\Fields\Complex;
 
 abstract class Category extends Resource
@@ -42,7 +42,10 @@ abstract class Category extends Resource
         return [  
             BelongsTo::make(__('Parent Category'), 'parent', static::class)
                 ->withoutTrashed()
-                ->nullable(),
+                ->nullable()
+                ->withMeta([
+                    'placeholder' => __('No parent')
+                ]),
 
             Select::make(__('Publish Status'), 'marked_as')->options([
                     'draft' => __('Draft'),
@@ -54,7 +57,10 @@ abstract class Category extends Resource
 
             Select::make(__('Display Layout'), 'config->layout')
                 ->options(layouts('category.single')->map->label())
-                ->hideFromIndex(),
+                ->displayUsingLabels()
+                ->hideFromIndex()
+                ->required()
+                ->rules('required'),
 
             Targomaan::make([
                 Text::make(__('Category Name'), 'name'),
@@ -66,37 +72,13 @@ abstract class Category extends Resource
             ]), 
 
             Multiselect::make(__('Available For'), 'config->roles')
-                ->options(Role::newModel()->get()->pluck('name', 'id'))
+                ->options(function() {
+                    return Role::newModel()->get()->pluck('name', 'id');
+                })
                 ->help(__('Restrict to users that have the selected roles.'))
                 ->placeholder(__('Select a user role.')), 
 
-            Complex::make(__('Images'), function() {
-                return [  
-                    Images::make(__('Banner'), 'banner')
-                        ->conversionOnPreview('common-thumbnail') 
-                        ->conversionOnDetailView('common-thumbnail') 
-                        ->conversionOnIndexView('common-thumbnail')
-                        ->fullSize(),
-
-                    Images::make(__('Logo'), 'logo')
-                        ->conversionOnPreview('common-thumbnail') 
-                        ->conversionOnDetailView('common-thumbnail') 
-                        ->conversionOnIndexView('common-thumbnail')
-                        ->fullSize(),
-
-                    Images::make(__('Application Banner'), 'app_banner')
-                        ->conversionOnPreview('common-thumbnail') 
-                        ->conversionOnDetailView('common-thumbnail') 
-                        ->conversionOnIndexView('common-thumbnail')
-                        ->fullSize(),
-
-                    Images::make(__('Application Logo'), 'app_logo')
-                        ->conversionOnPreview('common-thumbnail') 
-                        ->conversionOnDetailView('common-thumbnail') 
-                        ->conversionOnIndexView('common-thumbnail')
-                        ->fullSize(), 
-                ];
-            }),  
+            Complex::make(__('Images'), [$this, 'imageFields']),  
 
             BooleanGroup::make(__('Content Type'), 'config->resources') 
                 ->options($resources = Helper::resourceInformation($request)->pluck('label', 'key'))
@@ -105,39 +87,69 @@ abstract class Category extends Resource
                 ])),
 
             BooleanGroup::make(__('Display Setting'), 'config->display')
-                ->options([
-                    'name' => __('Display the category name.'),
+                ->options($this->displayConfigurations($request)),
 
-                    'abstract' => __('Display the category describe.'),
-
-                    'banner' => __('Display the category banner.'),
-
-                    'logo' => __('Display the category logo if possible.'),
-
-                    'subcategories' => __('Include subcategories content.'),
-
-                    'empty_subcategories' => __('Include empty subcategories')
-                ]),
-
-            Targomaan::make([ 
+            Targomaan::make([
                 Textarea::make(__('Describe Category'), 'abstract'),
-            ]),  
+            ]), 
 
-            new Panel(__('Configuration'), [
-
-                
-
-            ]),
-
-            $this->panel(__("Category display settings"), $this->tab(function($tab) use ($request) { 
-                foreach ($this->categorizables() as $categorizable) {
-                    if($fields = $this->categorizableFields($request, $categorizable)) {
-                        $tab->group($categorizable::label(), $fields);
-                    }  
-                }  
-            })->toArray()), 
+            new Panel(__('Contents Display Settings'), $this->filter([
+                new Fields\RelatableDisplayFields($request, __("Category`s content display settings")),
+            ])),
         ];
-    }  
+    }   
+
+    public function imageFields()
+    {
+        return [  
+            Images::make(__('Banner'), 'banner')
+                ->conversionOnPreview('common-thumbnail') 
+                ->conversionOnDetailView('common-thumbnail') 
+                ->conversionOnIndexView('common-thumbnail')
+                ->fullSize(),
+
+            Images::make(__('Logo'), 'logo')
+                ->conversionOnPreview('common-thumbnail') 
+                ->conversionOnDetailView('common-thumbnail') 
+                ->conversionOnIndexView('common-thumbnail')
+                ->fullSize(),
+
+            Images::make(__('Application Banner'), 'app_banner')
+                ->conversionOnPreview('common-thumbnail') 
+                ->conversionOnDetailView('common-thumbnail') 
+                ->conversionOnIndexView('common-thumbnail')
+                ->fullSize(),
+
+            Images::make(__('Application Logo'), 'app_logo')
+                ->conversionOnPreview('common-thumbnail') 
+                ->conversionOnDetailView('common-thumbnail') 
+                ->conversionOnIndexView('common-thumbnail')
+                ->fullSize(), 
+        ];
+    }
+
+    /**
+     * Returnc category display configurations.
+     *
+     * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request 
+     * @return array
+     */
+    public function displayConfigurations(Request $request)
+    {
+        return [
+            'name' => __('Display the category name'),
+
+            'abstract' => __('Display the category describe'),
+
+            'banner' => __('Display the category banner'),
+
+            'logo' => __('Display the category logo if possible'),
+
+            'subcategories' => __('Include subcategories content'),
+
+            'empty_subcategories' => __('Include empty subcategories')
+        ];
+    }
 
     /**
      * Build an associatable query for the field.
@@ -155,68 +167,29 @@ abstract class Category extends Resource
         }); 
 
         return $query->whereKeyNot($categories);
-    }
-
-    public function categorizableFields(Request $request, $categorizable)
-    { 
-        return collect(static::screens())->map(function($screenName, $screen) use ($request, $categorizable) { 
-
-            if(! $this->shouldIgnoreScreen($request, $categorizable, $screen)) { 
-                $fields =  $this->prepareCategorizableFields(
-                    $categorizable, $this->prepareScreenFields($screen, $categorizable::fields($request))
-                );
-
-                $toggle = $this->screenToggler($screenName, "{$categorizable::configKey()}.{$screen}", [
-                    0 => collect($fields)->map->attribute->filter()
-                ]);
-                     
-
-                return collect($fields)
-                        ->flatten()
-                        ->prepend($toggle)
-                        ->prepend($this->heading($screenName)->onlyOnDetail())
-                        ->each(function($field) use ($categorizable, $screen)  { 
-                            $field->canSee(function($request) use ($categorizable, $screen) { 
-                                if($request->editing == false) { 
-                                    return data_get(
-                                        $request->findModelQuery()->first(), "config.{$categorizable::configKey()}.{$screen}"
-                                    );
-                                }  
-
-                                return true; 
-                            });   
-                        }); 
-            } 
-
-            return $this->prepareCategorizableFields($categorizable, [
-                Text::make($screenName, $screen)->fillUsing(function() {
-                    return [];
-                }),
-            ]);
-        })->filter()->flatten()->toArray();
-    }
+    } 
 
     public static function screens()
     {
-        return [
+        return collect([
             'default' => __('Default'), 
             'desktop' => __('Desktop'), 
             'mobile'  => __('Mobile'), 
             'tablet'  => __('Tablet')
-        ];
+        ]);
     } 
 
     public function shouldIgnoreScreen(Request $request, $categorizable, $screen)
     {
         return $request->editing &&
-               $request->exists($categorizable::configKey()."_{$screen}") &&
-               (int) $request->get($categorizable::configKey()."_{$screen}") == 0;
+               $request->exists($categorizable::uriKey()."_{$screen}") &&
+               (int) $request->get($categorizable::uriKey()."_{$screen}") == 0;
     } 
 
     public function prepareCategorizableFields($categorizable, $fields)
     { 
         return $this->configField([
-                    $this->jsonField($categorizable::configKey(), $fields)
+                    $this->jsonField($categorizable::uriKey(), $fields)
                 ]) 
                 ->saveHistory()
                 ->hideFromIndex()
@@ -242,7 +215,5 @@ abstract class Category extends Resource
                     ->resolveUsing(function($value, $categorizable, $attribute) {  
                         return data_get($categorizable->config, $attribute) ? 1 : 0;
                     });
-    }
-
-    abstract public function categorizables() : array;
+    } 
 }
