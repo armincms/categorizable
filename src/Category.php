@@ -4,14 +4,17 @@ namespace Armincms\Categorizable;
 
 use Illuminate\Database\Eloquent\{Model, SoftDeletes}; 
 use Spatie\MediaLibrary\HasMedia\HasMedia;
-use Armincms\Concerns\{HasConfig, HasMediaTrait, Authorization};  
+use Armincms\Concerns\{HasConfig, HasMediaTrait, Authorization, InteractsWithLayouts};  
 use Armincms\Targomaan\Concerns\InteractsWithTargomaan;
 use Armincms\Targomaan\Contracts\Translatable; 
-use Armincms\Contracts\Authorizable;  
+use Armincms\Contracts\{Authorizable, HasLayout};  
+use Armincms\Taggable\Contracts\Taggable;
+use Armincms\Taggable\Concerns\InteractsWithTags;
 
-class Category extends Model implements Translatable, HasMedia, Authorizable 
+class Category extends Model implements Translatable, HasMedia, Authorizable, HasLayout, Taggable
 {
     use InteractsWithTargomaan, SoftDeletes, HasMediaTrait, Authorization, HasConfig; 
+    use InteractsWithLayouts, InteractsWithTags; 
     
     const TRANSLATION_TABLE = 'categories_translations';
 
@@ -99,14 +102,7 @@ class Category extends Model implements Translatable, HasMedia, Authorizable
         return $this->subCategories->flatMap(function($category) {
             return $category->flattenSubCategories()->push($category);
         });
-    }
-
-    // public function setConfigAttribute($config)
-    // { 
-    //     $this->attributes['config'] = collect($this->config)->whereNotIn(
-    //         'layout', collect($config)->pluck('layout')->all()
-    //     )->merge($config)->toJson(); 
-    // }
+    } 
 
     /**
      * Driver name of the targomaan.

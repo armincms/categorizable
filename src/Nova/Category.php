@@ -7,15 +7,16 @@ use Laravel\Nova\Panel;
 use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Fields\{Heading, Text, Select, Textarea, BooleanGroup, BelongsTo};
 use OptimistDigital\MultiselectField\Multiselect;
+use Whitecube\NovaFlexibleContent\Flexible; 
 use OwenMelbz\RadioField\RadioButton; 
-use Eminiarts\Tabs\Tabs;
 use Armincms\Nova\{Resource, Role};  
+use Armincms\Taggable\Nova\Fields\Tags;  
 use Armincms\Fields\Targomaan;
 use Armincms\Nova\Fields\Images; 
 use Armincms\Categorizable\Helper;
 use Zareismail\Fields\Complex;
 
-abstract class Category extends Resource
+class Category extends Resource
 {    
     /**
      * The model the resource corresponds to.
@@ -30,6 +31,13 @@ abstract class Category extends Resource
      * @var string
      */
     public static $title = 'name';  
+
+    /**
+     * The logical group associated with the resource.
+     *
+     * @var string
+     */
+    public static $group = 'Taxonomies';
 
     /**
      * Get the fields displayed by the resource.
@@ -55,50 +63,74 @@ abstract class Category extends Resource
                 ->required()
                 ->rules('required'),
 
-            Select::make(__('Display Layout'), 'config->layout')
-                ->options(layouts('category.single')->map->label())
-                ->displayUsingLabels()
-                ->hideFromIndex()
-                ->required()
-                ->rules('required'),
-
             Targomaan::make([
-                Text::make(__('Category Name'), 'name'),
+                
+                Text::make(__('Category Name'), 'name')
+                    ->required()
+                    ->rules('required'),
 
-                Text::make(__("Url Slug"), 'slug') 
+                Text::make(__('Url Slug'), 'slug') 
                     ->nullable()
                     ->hideFromIndex()
-                    ->help(__("Caution: cleaning the input causes rebuild it. This string used in url address.")), 
+                    ->help(__('Caution: cleaning the input causes rebuild it. This string used in url address.')), 
             ]), 
 
-            Multiselect::make(__('Available For'), 'config->roles')
-                ->options(function() {
-                    return Role::newModel()->get()->pluck('name', 'id');
-                })
-                ->help(__('Restrict to users that have the selected roles.'))
-                ->placeholder(__('Select a user role.')), 
+            Tags::make(__('Tags')),
 
             Complex::make(__('Images'), [$this, 'imageFields']),  
-
-            BooleanGroup::make(__('Content Type'), 'config->resources') 
-                ->options($resources = Helper::resourceInformation($request)->pluck('label', 'key'))
-                ->withMeta(array_merge([
-                    'value' => $request->isCreateOrAttachRequest() ? $resources : []
-                ])),
-
-            BooleanGroup::make(__('Display Setting'), 'config->display')
-                ->options($this->displayConfigurations($request)),
 
             Targomaan::make([
                 Textarea::make(__('Describe Category'), 'abstract'),
             ]), 
 
-            new Panel(__('Contents Display Settings'), $this->filter([
-                new Fields\RelatableDisplayFields($request, __("Category`s content display settings")),
-            ])),
+            new Panel(__('Advanced'), [  
+
+                Select::make(__('Display Layout'), 'config->layout')
+                    ->options(collect(static::newModel()->singleLayouts())->map->label())
+                    ->displayUsingLabels()
+                    ->hideFromIndex(),
+
+                Complex::make(__('Contents Display Layout'), function() use ($request) {
+                    return Helper::displayableResources($request)->map(function($resource) {
+                            return Select::make(__($resource::label()), 'config->layouts->'.$resource::uriKey())
+                                        ->options(collect($resource::newModel()->singleLayouts())->map->label())
+                                        ->displayUsingLabels()
+                                        ->hideFromIndex();
+                    }); 
+                }),
+
+                Multiselect::make(__('Available For'), 'config->roles')
+                    ->options(function() {
+                        return Role::newModel()->get()->pluck('name', 'id');
+                    })
+                    ->help(__('Restrict to users that have the selected roles.'))
+                    ->placeholder(__('Select a user role.')),   
+
+                BooleanGroup::make(__('Content Type'), 'config->resources') 
+                    ->options($resources = Helper::resourceInformation($request)->pluck('label', 'key'))
+                    ->withMeta(array_merge([
+                        'value' => $request->isCreateOrAttachRequest() ? $resources : []
+                    ])),
+
+                BooleanGroup::make(__('Display Setting'), 'config->display')
+                    ->options($this->displayConfigurations($request)),
+
+
+                Flexible::make(__('Contents Display Settings'))
+                    ->preset(\Armincms\Nova\Flexible\Presets\RelatableDisplayFields::class, [
+                        'request'   => $request,
+                        'interface' => \Armincms\Categorizable\Contracts\Categorizable::class, 
+                    ]),
+
+            ]), 
         ];
     }   
 
+    /**
+     * Return`s array of fields to hnalde iamges.
+     * 
+     * @return array
+     */
     public function imageFields()
     {
         return [  
@@ -167,53 +199,5 @@ abstract class Category extends Resource
         }); 
 
         return $query->whereKeyNot($categories);
-    } 
-
-    public static function screens()
-    {
-        return collect([
-            'default' => __('Default'), 
-            'desktop' => __('Desktop'), 
-            'mobile'  => __('Mobile'), 
-            'tablet'  => __('Tablet')
-        ]);
-    } 
-
-    public function shouldIgnoreScreen(Request $request, $categorizable, $screen)
-    {
-        return $request->editing &&
-               $request->exists($categorizable::uriKey()."_{$screen}") &&
-               (int) $request->get($categorizable::uriKey()."_{$screen}") == 0;
-    } 
-
-    public function prepareCategorizableFields($categorizable, $fields)
-    { 
-        return $this->configField([
-                    $this->jsonField($categorizable::uriKey(), $fields)
-                ]) 
-                ->saveHistory()
-                ->hideFromIndex()
-                ->toArray();
-    }
-
-    public function prepareScreenFields($screen, $fields)
-    {
-        return [
-            $this->jsonField($screen, $fields)
-        ];
-    }
-
-    public function screenToggler($name, $attribute, $toggles = [])
-    {
-        return RadioButton::make($name, $attribute)
-                    ->options([__("Default"), __("Custom")])
-                    ->toggle($toggles)
-                    ->default(0)
-                    ->marginBetween()
-                    ->onlyOnForms()
-                    ->fillUsing(function() { })
-                    ->resolveUsing(function($value, $categorizable, $attribute) {  
-                        return data_get($categorizable->config, $attribute) ? 1 : 0;
-                    });
-    } 
+    }  
 }

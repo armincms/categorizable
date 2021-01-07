@@ -3,7 +3,8 @@
 namespace Armincms\Categorizable;
  
 use Illuminate\Http\Request; 
-use Armincms\Helpers\SharedResource;   
+use Armincms\Contracts\HasLayout;   
+use Armincms\Helpers\{SharedResource, Common};   
 
 class Helper
 {   
@@ -28,4 +29,17 @@ class Helper
     { 
         return SharedResource::resourceInformation($request, Contracts\Categorizable::class);
     }
+
+    /**
+     * Get the categorizable resources available for the layout consumption.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Support\Collection
+     */
+    public static function displayableResources(Request $request)
+    {
+        return static::availableResources($request)->filter(function($resource) {
+            return Common::instanceOf($resource::$model, HasLayout::class);
+        });
+    } 
 }
