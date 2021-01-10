@@ -2,21 +2,26 @@
 
 namespace Armincms\Categorizable;
 
+use Illuminate\Http\Request; 
 use Illuminate\Database\Eloquent\{Model, SoftDeletes}; 
 use Spatie\MediaLibrary\HasMedia\HasMedia;
 use Armincms\Concerns\{HasConfig, HasMediaTrait, Authorization, InteractsWithLayouts};  
 use Armincms\Targomaan\Concerns\InteractsWithTargomaan;
 use Armincms\Targomaan\Contracts\Translatable; 
-use Armincms\Contracts\{Authorizable, HasLayout};  
+use Armincms\Contracts\{Authorizable, HasLayout};
+use Core\HttpSite\Concerns\IntractsWithSite;
+use Armincms\Helpers\SharedResource;
+use Armincms\Taggable\Concerns\InteractsWithTags;  
 use Armincms\Taggable\Contracts\Taggable;
-use Armincms\Taggable\Concerns\InteractsWithTags;
 
-class Category extends Model implements Translatable, HasMedia, Authorizable, HasLayout, Taggable
+abstract class Category extends Model implements Translatable, HasMedia, Authorizable, HasLayout, Taggable
 {
     use InteractsWithTargomaan, SoftDeletes, HasMediaTrait, Authorization, HasConfig; 
-    use InteractsWithLayouts, InteractsWithTags; 
+    use InteractsWithLayouts, InteractsWithTags, IntractsWithSite; 
     
     const TRANSLATION_TABLE = 'categories_translations';
+
+    const TRANSLATION_MODEL = Translation::class;
 
     const LOCALE_KEY = 'language';
 
@@ -55,10 +60,21 @@ class Category extends Model implements Translatable, HasMedia, Authorizable, Ha
      *
      * @return void
      */
-    protected static function boot()
+    public static function boot()
     {
         parent::boot(); 
+
+        static::addGlobalScope(function($query) {
+            return $query->resourceIn(static::resources()->all());
+        });
     }  
+
+    /**
+     * Get the interface of scoped resources.
+     * 
+     * @return string
+     */
+    abstract public static function resourcesScope() : string;
 
     /**
      * Query the related category.
@@ -67,7 +83,7 @@ class Category extends Model implements Translatable, HasMedia, Authorizable, Ha
      */
     public function parent()
     { 
-        return $this->belongsTo(self::class, 'category_id');
+        return $this->belongsTo(static::class, 'category_id');
     }  
 
     /**
@@ -77,7 +93,7 @@ class Category extends Model implements Translatable, HasMedia, Authorizable, Ha
      */ 
     public function categories()
     {
-        return $this->hasMany(self::class, 'category_id');
+        return $this->hasMany(static::class, 'category_id');
     } 
 
     /**
@@ -102,15 +118,104 @@ class Category extends Model implements Translatable, HasMedia, Authorizable, Ha
         return $this->subCategories->flatMap(function($category) {
             return $category->flattenSubCategories()->push($category);
         });
-    } 
+    }
+
+    /**
+     * Query the resource type.
+     * 
+     * @param  \Illumiante\Database\Elqoeunt\Query $query    
+     * @param  array  $resources
+     * @return \Illumiante\Database\Elqoeunt\Query           
+     */
+    public function scopeResourceIn($query, array $resources)
+    {
+        return $query->whereJsonContains('config->resources', array_map(function($resource) {
+            return $resource::uriKey();
+        }, $resources));
+    }
 
     /**
      * Driver name of the targomaan.
      * 
-     * @return [type] [description]
+     * @return string
      */
     public function translator(): string
     {
         return 'layeric';
+    }
+
+    /**
+     * Get the resources available for the given interface.
+     *
+     * @param  \Illuminate\Http\Request  $request 
+     * @return \Illuminate\Support\Collection
+     */
+    public static function resources()
+    {
+        return SharedResource::availableResources(app('request'), static::resourcesScope());
+    } 
+
+    /**
+     * Get meta data information about all resources for client side consumption.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  string $interface
+     * @return \Illuminate\Support\Collection
+     */
+    public static function resourceInformation()
+    {
+        return SharedResource::resourceInformation(app('request'), static::resourcesScope());
+    }
+
+    /**
+     * Prepare the resource for JSON serialization.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    public function serializeForDetail(Request $request)
+    {
+        return [
+            'name' => $this->name,
+            'logo' => $this->getLogo(),
+            'banner'    => $this->getBanner(), 
+            'abstract'  => $this->abstract,
+        ];
+    }
+
+    /**
+     * Retruns the Banner images.
+     * 
+     * @return array
+     */
+    public function getBanner()
+    {
+        return $this->getConversions($this->getFirstMedia('banner'), ['common-main', 'common-thumbnail']);
+    }
+
+    /**
+     * Retruns the Logo images.
+     * 
+     * @return array
+     */
+    public function getLogo()
+    {
+        return $this->getConversions($this->getFirstMedia('logo'), ['thumbnail']);
+    }
+
+    /**
+     * Handle dynamic method calls into the model.
+     *
+     * @param  string  $method
+     * @param  array  $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        if($resource = static::resourceInformation()->where('key', $method)->first()) {
+            return $this->morphedByMany($resource['model'], 'categorizable', 'categorizable');
+        }
+
+        return parent::__call($method, $parameters);
     }
 }

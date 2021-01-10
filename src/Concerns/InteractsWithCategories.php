@@ -10,8 +10,5 @@ trait InteractsWithCategories
 	 * 
 	 * @return \Illuminate\Database\Eloqenut\Relations\BelongsToMany
 	 */
-	public function categories()
-	{
-		return $this->morphToMany(\Armincms\Categorizable\Category::class, 'categorizable', 'categorizable');
-	}
+	abstract public function categories();
 }
