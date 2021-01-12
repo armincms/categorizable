@@ -137,16 +137,26 @@ abstract class Category extends Resource
                     ->withMeta(array_filter([
                         'value' => $request->isCreateOrAttachRequest() ? $resources : null
                     ]))
-                    ->fillUsing(function($request, $model, $attribute) {
+                    ->required()
+                    ->rules([
+                        'required', 
+                        function($attribute, $value, $fail) {
+                            collect(json_decode($value, true))->filter()->isNotEmpty() ||
+                            $fail(__('Each category should accept one type of content.'));
+                        }
+                    ])
+                    /*->fillUsing(function($request, $model, $attribute) {
                         $model->setConfig('resources', array_keys((array_filter(
                             json_decode($request->get($attribute), true)
                         ))));
                     })
                     ->resolveUsing(function($value) {
-                        return collect($value)->flip()->map(function() {
+                        return collect($value)->map(function($value, $key) {
+                            return is_string($value) ? $value : $key;
+                        })->flip()->map(function() {
                             return true;
                         })->all();
-                    }),
+                    })*/,
 
                 BooleanGroup::make(__('Display Setting'), 'config->display')
                     ->options($options = $this->displayConfigurations($request))

@@ -129,9 +129,30 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
      */
     public function scopeResourceIn($query, array $resources)
     {
-        return $query->whereJsonContains('config->resources', array_map(function($resource) {
-            return $resource::uriKey();
-        }, $resources));
+        return $query->tap(function($query) use ($resources) {
+            collect($resources)->each(function($resource, $key) use ($query) { 
+                $query->when(
+                    boolval($key), 
+                    function($query) use ($resource) {
+                        $query->orWhere->resource($resource);
+                    }, 
+                    function($query) use ($resource) {
+                        $query->resource($resource);
+                    });
+            });
+        });
+    }
+
+    /**
+     * Query for the given resource.
+     * 
+     * @param  \Illumiante\Database\Elqoeunt\Query $query    
+     * @param  string  $resource
+     * @return \Illumiante\Database\Elqoeunt\Query           
+     */
+    public function scopeResource($query, string $resource)
+    { 
+        return $query->where($query->qualifyColumn('config->resources->'.$resource::uriKey()), true);
     }
 
     /**
