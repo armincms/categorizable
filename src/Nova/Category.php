@@ -135,7 +135,9 @@ abstract class Category extends Resource
                 BooleanGroup::make(__('Content Type'), 'config->resources') 
                     ->options($resources = SharedResource::resourceInformation($request, static::resourcesScope())->pluck('label', 'key'))
                     ->withMeta(array_filter([
-                        'value' => $request->isCreateOrAttachRequest() ? $resources : null
+                        'value' => $request->isCreateOrAttachRequest() ? $resources->map(function() {
+                            return true;
+                        })->all() : null
                     ]))
                     ->required()
                     ->rules([
@@ -144,19 +146,7 @@ abstract class Category extends Resource
                             collect(json_decode($value, true))->filter()->isNotEmpty() ||
                             $fail(__('Each category should accept one type of content.'));
                         }
-                    ])
-                    /*->fillUsing(function($request, $model, $attribute) {
-                        $model->setConfig('resources', array_keys((array_filter(
-                            json_decode($request->get($attribute), true)
-                        ))));
-                    })
-                    ->resolveUsing(function($value) {
-                        return collect($value)->map(function($value, $key) {
-                            return is_string($value) ? $value : $key;
-                        })->flip()->map(function() {
-                            return true;
-                        })->all();
-                    })*/,
+                    ]),
 
                 BooleanGroup::make(__('Display Setting'), 'config->display')
                     ->options($options = $this->displayConfigurations($request))
