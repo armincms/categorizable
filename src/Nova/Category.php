@@ -110,18 +110,24 @@ abstract class Category extends Resource
             new Panel(__('Advanced'), [  
 
                 Select::make(__('Display Layout'), 'config->layout')
-                    ->options(collect(static::newModel()->singleLayouts())->map->label())
+                    ->options($layouts = collect(static::newModel()->singleLayouts())->map->label())
                     ->displayUsingLabels()
-                    ->hideFromIndex(), 
+                    ->hideFromIndex()
+                    ->withMeta(array_filter([
+                        'value' => $request->isCreateOrAttachRequest() ? $layouts->keys()->first() : null
+                    ])), 
 
                 Complex::make(__('Contents Display Layout'), function() use ($request) {
-                    return $this->displayableResources($request)->map(function($resource) {
+                    return $this->displayableResources($request)->map(function($resource) use ($request) {
                         return  Select::make(__($resource::label()), 'config->layouts->'.$resource::uriKey())
-                                    ->options(collect($resource::newModel()->listableLayouts())->map->label())
+                                    ->options($layouts = collect($resource::newModel()->listableLayouts())->map->label())
                                     ->displayUsingLabels()
                                     ->hideFromIndex()
                                     ->required()
-                                    ->ruleS('required');
+                                    ->ruleS('required')
+                                    ->withMeta(array_filter([
+                                        'value' => $request->isCreateOrAttachRequest() ? $layouts->keys()->first() : null
+                                    ]));
                     }); 
                 }),  
 
