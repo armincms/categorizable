@@ -17,7 +17,7 @@ use Armincms\Taggable\Contracts\Taggable;
 abstract class Category extends Model implements Translatable, HasMedia, Authorizable, HasLayout, Taggable
 {
     use InteractsWithTargomaan, SoftDeletes, HasMediaTrait, Authorization, HasConfig; 
-    use InteractsWithLayouts, InteractsWithTags, IntractsWithSite; 
+    use InteractsWithLayouts, InteractsWithTags, IntractsWithSite, HasPublish; 
     
     const TRANSLATION_TABLE = 'categories_translations';
 
