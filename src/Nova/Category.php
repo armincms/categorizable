@@ -139,7 +139,7 @@ abstract class Category extends Resource
                     ->placeholder(__('Select a user role.')),   
 
                 BooleanGroup::make(__('Content Type'), 'config->resources') 
-                    ->options($resources = SharedResource::resourceInformation($request, static::resourcesScope())->pluck('label', 'key'))
+                    ->options($resources = SharedResource::resourceInformation($request, static::resourcesScope())->pluck('label', 'relation'))
                     ->withMeta(array_filter([
                         'value' => $request->isCreateOrAttachRequest() ? $resources->map(function() {
                             return true;
