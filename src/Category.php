@@ -233,7 +233,7 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
      */
     public function __call($method, $parameters)
     {
-        if($resource = static::resourceInformation()->where('relation', $method)->first()) {
+        if($resource = static::resourceInformation()->where('key', $method)->first()) {
             return $this->morphedByMany($resource['model'], 'categorizable', 'categorizable');
         }
 
