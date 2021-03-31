@@ -37,7 +37,7 @@ class Translation extends Pivot
      *
      * @return array
      */
-    public function sluggable()
+    public function sluggable():array
     {
         return [
             'slug' => [
