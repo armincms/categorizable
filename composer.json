@@ -8,7 +8,8 @@
     "license": "MIT",
     "require": {
         "php": ">=7.1.0", 
-        "zareismail/markable": "~0.1" 
+        "zareismail/markable": "~0.1" , 
+        "armincms/taggable": "~1.20" 
     },
     "autoload": {
         "psr-4": {
