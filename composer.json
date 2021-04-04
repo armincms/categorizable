@@ -9,6 +9,7 @@
     "require": {
         "php": ">=7.1.0", 
         "zareismail/markable": "~0.1" , 
+        "whitecube/nova-flexible-content": "~0.1",
         "armincms/taggable": "~1.0" 
     },
     "autoload": {
