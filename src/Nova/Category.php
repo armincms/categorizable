@@ -98,8 +98,8 @@ abstract class Category extends Resource
                     ->hideFromIndex()
                     ->help(__('Caution: cleaning the input causes rebuild it. This string used in url address.')), 
             ]), 
-
-            Tags::make(__('Tags')),
+ 
+            Tags::make(__('Tags'), 'tags')->hideFromIndex(),
 
             Complex::make(__('Images'), [$this, 'imageFields']),  
 
