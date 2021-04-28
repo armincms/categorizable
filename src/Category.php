@@ -166,6 +166,16 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
     }
 
     /**
+     * Get the tag url.
+     * 
+     * @return string
+     */
+    public function url(): string
+    {
+        return $this->site()->url(urldecode($this->getTranslation('url')));
+    }
+
+    /**
      * Get the resources available for the given interface.
      *
      * @param  \Illuminate\Http\Request  $request 
