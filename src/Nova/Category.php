@@ -43,11 +43,11 @@ abstract class Category extends Resource
     public function fields(Request $request)
     { 
         return [   
-            Url::make(__('Category Name'), 'url')
+            Url::make(__('Category Name'), 'name')
                 ->exceptOnForms()
                 ->alwaysClickable() 
-                ->resolveUsing(function($value, $resource, $attribute) use ($request) {
-                    return app('site')->findByComponent($request->model()->component())->url(urldecode($value));
+                ->resolveUsing(function()  {
+                    return $this->url();
                 })
                 ->titleUsing(function($value, $resource) {
                     return $this->name;
