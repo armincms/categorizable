@@ -61,8 +61,8 @@ abstract class Category extends Component implements Resourceable
 	 */
 	public function categorizables()
 	{  
-		return $this->resourceInformation()->map(function($ignore, $resource) {  
-			return $this->resource()->{$resource}()->paginate($this->hasFilter() ? 25 : 3);
+		return $this->resourceInformation()->map(function($relation, $resourceName) {  
+			return $this->resource()->{$relation}()->paginate($this->paginationLength());
 		})->filter->isNotEmpty(); 
 	}  
 
@@ -77,7 +77,7 @@ abstract class Category extends Component implements Resourceable
 	{
 		return $this->newModel(app('request'))->resourceInformation()->filter(function($resource) {
 			return ! $this->hasFilter() || $this->filteredBy($resource['key']);
-		})->map->relation->flip();
+		})->pluck('relation', 'key');
 	} 
 
     /**
@@ -100,5 +100,15 @@ abstract class Category extends Component implements Resourceable
 	public function hasFilter()
 	{
 		return request()->has('categorizable');
+	}
+
+	/**
+	 * Returns pagination length.
+	 * 
+	 * @return int
+	 */
+	public function paginationLength()
+	{ 
+		return $this->resourceInformation()->count() < 2 || $this->hasFilter() ? 25 : 3;
 	}
 }
