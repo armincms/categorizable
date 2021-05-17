@@ -75,11 +75,9 @@ abstract class Category extends Component implements Resourceable
      */
 	public function resourceInformation()
 	{
-		return forward_static_call([$this->newModel(app('request')), 'resources'])->map(function($resource) {
-			return $resource::uriKey();
-		})->filter(function($resource) {
-			return ! $this->hasFilter() || $this->filteredBy($resource);
-		})->flip();
+		return $this->newModel(app('request'))->resourceInformation()->filter(function($resource) {
+			return ! $this->hasFilter() || $this->filteredBy($resource['key']);
+		})->map->relation->flip();
 	} 
 
     /**
