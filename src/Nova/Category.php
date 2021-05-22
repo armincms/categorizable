@@ -165,8 +165,24 @@ abstract class Category extends Resource
                         }
                     ]),
 
+                \OwenMelbz\RadioField\RadioButton::make(__('Display Setting'), 'display_setting')
+                    ->options([__('Default'), __('Custom')])
+                    ->fillUsing(function(){})
+                    ->resolveUsing(function() {
+                        return intval(data_get($this->config, 'display.detail'));
+                    })
+                    ->toggle([
+                        ['config->display->detail']
+                    ]),
+
                 BooleanGroup::make(__('Display Setting'), 'config->display->detail')
-                    ->options($options = static::displayConfigurations($request)),
+                    ->options($options = static::displayConfigurations($request))
+                    ->fillUsing(function($request, $resource, $attribute) {
+                        if (intval($request->get('display_setting'))) {
+                            $resource->{$attribute} = json_decode($request->get($attribute), true);
+                        }
+                    })
+                    ->nullable(),
 
 
                 Flexible::make(__('Contents Display Settings'))
@@ -295,6 +311,6 @@ abstract class Category extends Resource
      */
     public static function optionKey($key)
     {
-        return mb_strtoupper(str_replace(['\\', '-'], '_', static::uriKey()))."->{$key}";
+        return forward_static_call([static::$model, 'optionKey'], $key);
     }
 }

@@ -28,7 +28,7 @@ class CategoryConfig extends Resource
      *
      * @var string
      */
-    public static $model = \Armincms\Categorizable\CategoryConfig::class; 
+    public static $model = \Armincms\Categorizable\Models\Category::class; 
 
     /**
      * Get the displayable label of the resource.
@@ -92,7 +92,7 @@ class CategoryConfig extends Resource
                     ->resolveUsing(function($value, $resource, $attribute) use ($options) {
                         $values = (array) $this->resolveCallback($value, $resource, $attribute);
 
-                        return array_merge($options, $values);
+                        return array_map('boolval', array_merge($options, $values));
                     }), 
 
                 Flexible::make(__('Contents Display Settings'), $category::uriKey())
@@ -116,29 +116,14 @@ class CategoryConfig extends Resource
      * @return \Laravel\Nova\Fields\Field           
      */
     public function internalLayoutField($category, $resource)
-    {
-        $attribute = $this->internalFieldAttribute($category, $resource, 'layout');
-
-        return  Select::make(__($resource::label()), $attribute)
+    { 
+        return  Select::make(__($resource::label()), $category::optionKey('layouts->'.$resource::uriKey()))
                     ->options(collect($resource::newModel()->listableLayouts())->map->label())
                     ->displayUsingLabels() 
                     ->rules('required')
                     ->required()
                     ->resolveUsing([$this, 'resolveCallback']);
-    }
-
-    /**
-     * Get attribute name of the category contetn.
-     * 
-     * @param  string $category  
-     * @param  string $resource  
-     * @param  string $attribute 
-     * @return string            
-     */
-    public function internalFieldAttribute($category, $resource, $attribute)
-    {
-        return $category::optionKey($resource::uriKey()).'->'.$attribute;
-    }
+    } 
 
     /**
      * Get the categorizable resources.

@@ -70,6 +70,70 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
     }  
 
     /**
+     * Get the config value with the given key.
+     * 
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getConfig(string $key, $default = null)
+    {
+        $config = app('request')->is('nova-api/*') ? $this->config : $this->mergeConfigurations();
+
+        return data_get($config, $key, $default);
+    }  
+
+    /**
+     * Return merged config with default configs.
+     *  
+     * @return array
+     */
+    public function mergeConfigurations()
+    { 
+        $defaults = $this->relationLoaded('parent') && ! is_null($this->parent)
+                        ? $this->parent->getGlobalConfigurations()
+                        : $this->getGlobalConfigurations();  
+
+        return array_replace_recursive((array) $defaults, collect($this->config)->map(function($value) {
+            return is_array($value) ? array_filter($value) : $value;
+        })->filter()->all());
+    }
+
+    /**
+     * Get the config value with the given key.
+     * 
+     * @param string $key
+     * @param mixed $default
+     * @return mixed
+     */
+    public function getGlobalConfigurations()
+    {
+        $config = (array) json_decode(Nova\CategoryConfig::option(static::optionGroup()), true);
+
+        return array_merge($config, ['relatable' => Nova\CategoryConfig::newModel()->options()]);
+    }
+
+    /**
+     * Get the option name for the given key.
+     *
+     * @return string
+     */
+    public static function optionKey($key)
+    {
+        return implode('->', [static::optionGroup(), $key]);
+    }
+
+    /**
+     * Get the options group name for the model.
+     *
+     * @return string
+     */
+    public static function optionGroup()
+    {
+        return mb_strtoupper(str_replace(['Armincms\\', 'Models\\', '\\', '-'], ['', '_'], static::class));
+    }
+
+    /**
      * Get the interface of scoped resources.
      * 
      * @return string

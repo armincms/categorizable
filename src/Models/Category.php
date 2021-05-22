@@ -1,13 +1,13 @@
 <?php 
 
-namespace Armincms\Categorizable;
+namespace Armincms\Categorizable\Models;
 
 use Armincms\Bios\Option; 
 use Armincms\Targomaan\Concerns\InteractsWithTargomaan; 
 use Armincms\Targomaan\Contracts\Translatable; 
 use Armincms\Categorizable\Nova\CategoryConfig as Config; 
  
-class CategoryConfig extends Option implements Translatable
+class Category extends Option implements Translatable
 { 
     use InteractsWithTargomaan; 
 
