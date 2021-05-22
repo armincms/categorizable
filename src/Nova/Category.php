@@ -135,7 +135,11 @@ abstract class Category extends Resource
                         'dx' => __('Laptop'),
                         'dl' => __('Monitor'), 
                     ])->map(function($labe, $attribute) {
-                        return Number::make($labe, "config->display->{$attribute}");
+                        return  Number::make($labe, "config->display->{$attribute}")
+                                    ->rules('max:12') 
+                                    ->nullable()
+                                    ->max(12)
+                                    ->min(1);
                     }); 
                 }),  
 

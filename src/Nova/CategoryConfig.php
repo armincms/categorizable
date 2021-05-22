@@ -75,9 +75,11 @@ class CategoryConfig extends Resource
                         'dl' => __('Monitor'), 
                     ])->map(function($labe, $attribute) use ($category) {
                         return Number::make($labe, $category::optionKey("display->{$attribute}"))
+                            ->resolveUsing([$this, 'resolveCallback'])
+                            ->rules('required', 'max:12', 'min:1')
                             ->required()
-                            ->rules('required')
-                            ->resolveUsing([$this, 'resolveCallback']);
+                            ->max(12)
+                            ->min(1);
                     }); 
                 }),  
 
