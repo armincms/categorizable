@@ -5,6 +5,8 @@ namespace Armincms\Categorizable;
 use Illuminate\Support\ServiceProvider; 
 use Illuminate\Console\Events\ArtisanStarting;
 use Illuminate\Contracts\Support\DeferrableProvider;  
+use Laravel\Nova\Events\ServingNova;
+use Laravel\Nova\Nova as LaravelNova;
 
 class CategorizableServiceProvider extends ServiceProvider implements DeferrableProvider
 {  
@@ -16,6 +18,9 @@ class CategorizableServiceProvider extends ServiceProvider implements Deferrable
     public function register()
     {
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+        LaravelNova::resources([
+            Nova\CategoryConfig::class,
+        ]);
     }
 
     /**
@@ -27,6 +32,7 @@ class CategorizableServiceProvider extends ServiceProvider implements Deferrable
     {
         return [ 
             ArtisanStarting::class, 
+            ServingNova::class,
         ];
     }
     /**

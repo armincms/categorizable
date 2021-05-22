@@ -2,10 +2,11 @@
 
 namespace Armincms\Categorizable\Nova;
   
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Laravel\Nova\Panel;
 use Laravel\Nova\Http\Requests\NovaRequest;
-use Laravel\Nova\Fields\{Heading, Text, Select, Textarea, BooleanGroup, BelongsTo};
+use Laravel\Nova\Fields\{Heading, Text, Number, Select, Textarea, BooleanGroup, BelongsTo};
 use OptimistDigital\MultiselectField\Multiselect;
 use Whitecube\NovaFlexibleContent\Flexible;  
 use Inspheric\Fields\Url;
@@ -113,23 +114,33 @@ abstract class Category extends Resource
                     ->options($layouts = collect(static::newModel()->singleLayouts())->map->label())
                     ->displayUsingLabels()
                     ->hideFromIndex()
-                    ->withMeta(array_filter([
-                        'value' => $request->isCreateOrAttachRequest() ? $layouts->keys()->first() : null
-                    ])), 
+                    ->nullable(), 
 
-                Complex::make(__('Contents Display Layout'), function() use ($request) {
+                Complex::make(__('Internal Layouts'), function() use ($request) {
                     return $this->displayableResources($request)->map(function($resource) use ($request) {
                         return  Select::make(__($resource::label()), 'config->layouts->'.$resource::uriKey())
                                     ->options($layouts = collect($resource::newModel()->listableLayouts())->map->label())
                                     ->displayUsingLabels()
-                                    ->hideFromIndex()
-                                    ->required()
-                                    ->ruleS('required')
-                                    ->withMeta(array_filter([
-                                        'value' => $request->isCreateOrAttachRequest() ? $layouts->keys()->first() : null
-                                    ]));
+                                    ->hideFromIndex() 
+                                    ->nullable();
                     }); 
                 }),  
+
+                Complex::make(__('Display Columns'), function() {
+                    return collect([
+                        'mp' => __('Mobile Portrait'),
+                        'ml' => __('Mobile Landsacpe'), 
+                        'tp' => __('Tablet Portrait'),
+                        'tl' => __('Tablet Landsacpe'), 
+                        'dx' => __('Laptop'),
+                        'dl' => __('Monitor'), 
+                    ])->map(function($labe, $attribute) {
+                        return Number::make($labe, "config->display->{$attribute}");
+                    }); 
+                }),  
+
+                Number::make(__('Number of per page'), 'config->display->per_page')
+                    ->help(__('Number of resource per page.')),
 
                 Multiselect::make(__('Available For'), 'config->roles')
                     ->options(function() {
@@ -154,13 +165,8 @@ abstract class Category extends Resource
                         }
                     ]),
 
-                BooleanGroup::make(__('Display Setting'), 'config->display')
-                    ->options($options = $this->displayConfigurations($request))
-                    ->withMeta(array_filter([
-                        'value' => $request->isCreateOrAttachRequest() ? collect($options)->map(function() {
-                            return true;
-                        }) : null
-                    ])),
+                BooleanGroup::make(__('Display Setting'), 'config->display->detail')
+                    ->options($options = static::displayConfigurations($request)),
 
 
                 Flexible::make(__('Contents Display Settings'))
@@ -227,7 +233,7 @@ abstract class Category extends Resource
      * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request 
      * @return array
      */
-    public function displayConfigurations(Request $request)
+    public static function displayConfigurations(Request $request)
     {
         return [
             'name' => __('Display the category name'),
@@ -269,6 +275,26 @@ abstract class Category extends Resource
      */
     public static function uriKey()
     {
-        return str_slug(static::class);
+        return Str::lower(str_replace('\\', '-', static::class));
+    }
+
+    /**
+     * Get the URI key for the resource.
+     *
+     * @return string
+     */
+    public static function option($key, $default = null)
+    {
+        return Configuration::option(static::optionKey($key), $default);
+    }
+
+    /**
+     * Get the URI key for the resource.
+     *
+     * @return string
+     */
+    public static function optionKey($key)
+    {
+        return mb_strtoupper(str_replace(['\\', '-'], '_', static::uriKey()))."->{$key}";
     }
 }
