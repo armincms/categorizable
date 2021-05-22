@@ -22,17 +22,17 @@ abstract class Category extends Component implements Resourceable
 
 	public function toHtml(Request $request, Document $docuemnt) : string
 	{        
-		$tag = $this->newQuery($request)->whereHas('translations', function($query) use ($request) {
+		$category = $this->newQuery($request)->whereHas('translations', function($query) use ($request) {
 			$query->whereUrl($request->relativeUrl());
 		})->firstOrFail(); 
 
-		$this->resource($tag);   
-		$docuemnt->title($tag->name);  
-		$docuemnt->description($tag->abstract);   
-		$layout = $tag->getConfig('layout', $this->config('layout', 'clean-category'));
+		$this->resource($category);   
+		$docuemnt->title($category->name);  
+		$docuemnt->description($category->abstract);   
+		$layout = $category->getConfig('layout', $this->config('layout', 'clean-category'));
 
 		return (string) $this->firstLayout($docuemnt, $layout)
-							 ->display($tag->serializeForDetail($request), array_merge($this->config(), $tag->config)); 
+							 ->display($category->serializeForDetail($request), array_merge($this->config(), $category->config)); 
 	}     
 
 	/**
