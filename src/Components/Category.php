@@ -29,7 +29,7 @@ abstract class Category extends Component implements Resourceable
 		$this->resource($category);   
 		$docuemnt->title($category->name);  
 		$docuemnt->description($category->abstract);   
-		$layout = $category->getConfig('layout', $this->config('layout', 'clean-category'));
+		$layout = $category->getConfig('layout', $this->config('layout', 'clean-category')); 
 
 		return (string) $this->firstLayout($docuemnt, $layout)
 							 ->display($category->serializeForDetail($request), array_merge($this->config(), $category->config)); 
@@ -109,6 +109,20 @@ abstract class Category extends Component implements Resourceable
 	 */
 	public function paginationLength()
 	{ 
-		return $this->resourceInformation()->count() < 2 || $this->hasFilter() ? 25 : 3;
+		return $this->resourceInformation()->count() < 2 || $this->hasFilter() 
+					? $this->resource->getConfig('display.per_page') 
+					: 3;
+	} 
+
+	/**
+	 * Get config value with the given key.
+	 *
+	 * @param string $key
+	 * @param mixed $default
+	 * @return mixed
+	 */
+	public function getConfig(string $key, $default = null)
+	{
+		return $this->resource->getConfig($key, $default);
 	}
 }
