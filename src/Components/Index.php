@@ -24,7 +24,7 @@ abstract class Index extends Component
 		$layout = $this->config('layout', 'clean-category-review');
 
 		return (string) $this->firstLayout($docuemnt, $layout)->display([
-			'categories' => $this->newQuery($request)->paginate(1),
+			'categories' => $this->newQuery($request)->paginate(16),
 		]); 
 	}     
 
