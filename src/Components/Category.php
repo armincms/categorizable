@@ -43,7 +43,7 @@ abstract class Category extends Component implements Resourceable
 	 */
 	public function newQuery(Request $request)
 	{
-		return $this->newModel($request)->newQuery();
+		return $this->newModel($request)->newQuery()->published();
 	}
 
 	/**
