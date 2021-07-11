@@ -102,7 +102,8 @@ abstract class Category extends Resource
  
             Tags::make(__('Tags'), 'tags')->hideFromIndex(),
 
-            Complex::make(__('Images'), [$this, 'imageFields']),  
+            Complex::make(__('Images'), [$this, 'imageFields'])
+                ->hideFromIndex(),  
 
             Targomaan::make([
                 Textarea::make(__('Describe Category'), 'abstract'),
@@ -141,17 +142,19 @@ abstract class Category extends Resource
                                     ->max(12)
                                     ->min(1);
                     }); 
-                }),  
+                })->hideFromIndex(),  
 
                 Number::make(__('Number of per page'), 'config->display->per_page')
-                    ->help(__('Number of resource per page.')),
+                    ->help(__('Number of resource per page.'))
+                    ->hideFromIndex(),
 
                 Multiselect::make(__('Available For'), 'config->roles')
                     ->options(function() {
                         return Role::newModel()->get()->pluck('name', 'id');
                     })
                     ->help(__('Restrict to users that have the selected roles.'))
-                    ->placeholder(__('Select a user role.')),   
+                    ->placeholder(__('Select a user role.'))
+                    ->hideFromIndex(),   
 
                 BooleanGroup::make(__('Content Type'), 'config->resources') 
                     ->options($resources = SharedResource::resourceInformation($request, static::resourcesScope())->pluck('label', 'key'))
@@ -172,6 +175,7 @@ abstract class Category extends Resource
                 \OwenMelbz\RadioField\RadioButton::make(__('Display Setting'), 'display_setting')
                     ->options([__('Default'), __('Custom')])
                     ->fillUsing(function(){})
+                    ->hideFromIndex()
                     ->resolveUsing(function() {
                         return intval(data_get($this->config, 'display.detail'));
                     })
