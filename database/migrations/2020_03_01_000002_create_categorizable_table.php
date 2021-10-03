@@ -14,13 +14,9 @@ class CreateCategorizableTable extends Migration
     public function up()
     {
         Schema::create('categorizable', function (Blueprint $table) {
-            $table->bigIncrements('id'); 
-            $table->unsignedBigInteger('category_id');
-            $table->morphs('categorizable');
-
-            $table->foreign('category_id')->references('id')->on('categories')
-                  ->onDelete('cascade')
-                  ->onUpdate('cascade');
+            $table->id(); 
+            $table->foreignId('category_id')->constrained('categories');
+            $table->morphs('categorizable'); 
         });
     }
 
