@@ -221,29 +221,13 @@ abstract class Category extends Resource
     public function imageFields()
     {
         return [  
-            Images::make(__('Banner'), 'banner')
-                ->conversionOnPreview('common-thumbnail') 
-                ->conversionOnDetailView('common-thumbnail') 
-                ->conversionOnIndexView('common-thumbnail')
-                ->fullSize(),
+            Images::make(__('Banner'), 'banner')->fullSize(),
 
-            Images::make(__('Logo'), 'logo')
-                ->conversionOnPreview('common-thumbnail') 
-                ->conversionOnDetailView('common-thumbnail') 
-                ->conversionOnIndexView('common-thumbnail')
-                ->fullSize(),
+            Images::make(__('Logo'), 'logo')->fullSize(),
 
-            Images::make(__('Application Banner'), 'app_banner')
-                ->conversionOnPreview('common-thumbnail') 
-                ->conversionOnDetailView('common-thumbnail') 
-                ->conversionOnIndexView('common-thumbnail')
-                ->fullSize(),
+            Images::make(__('Application Banner'), 'app_banner')->fullSize(),
 
-            Images::make(__('Application Logo'), 'app_logo')
-                ->conversionOnPreview('common-thumbnail') 
-                ->conversionOnDetailView('common-thumbnail') 
-                ->conversionOnIndexView('common-thumbnail')
-                ->fullSize(), 
+            Images::make(__('Application Logo'), 'app_logo')->fullSize(), 
         ];
     }
 
