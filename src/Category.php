@@ -285,7 +285,7 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
      */
     public function getBanner()
     {
-        return $this->getConversions($this->getFirstMedia('banner'), ['common-main', 'common-thumbnail']);
+        return $this->getConversions($this->getFirstMedia('banner'), ['main', 'thumbnail']);
     }
 
     /**
