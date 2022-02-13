@@ -106,7 +106,7 @@ abstract class SingleCategory extends GutenbergWidget
     protected function getRelatedKeys(string $relationship)
     { 
         return with($this->getParent($relationship), function($resource) {
-            return $resource->descendants->map->getKey()->push($resource->getKey()); 
+            return collect($resource->descendants)->map->getKey()->push($resource->getKey()); 
         });
     } 
 
