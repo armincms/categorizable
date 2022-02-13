@@ -20,11 +20,11 @@ abstract class SingleCategory extends GutenbergWidget
     use ResolvesDisplay;
 
     /**
-     * The logical group associated with the template.
+     * The logical group associated with the widget.
      *
      * @var string
      */
-    public static $group = 'Other';
+    public static $group = 'Category';
 
     /**
      * Indicates if the widget should be shown on the component page.
