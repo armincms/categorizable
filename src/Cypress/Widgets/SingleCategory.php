@@ -2,19 +2,29 @@
 
 namespace Armincms\Categorizable\Cypress\Widgets;
 
-use Armincms\Contract\Gutenberg\Templates\HasRelationships; 
 use Armincms\Contract\Gutenberg\Templates\Pagination; 
-use Laravel\Nova\Fields\BooleanGroup;
+use Armincms\Contract\Gutenberg\Widgets\HasRelationships; 
+use Armincms\Contract\Gutenberg\Widgets\BootstrapsTemplate;  
+use Armincms\Contract\Gutenberg\Widgets\ResolvesDisplay;   
+use Laravel\Nova\Fields\Number;
 use Laravel\Nova\Fields\Select;
 use Zareismail\Cypress\Widget;  
 use Zareismail\Cypress\Http\Requests\CypressRequest;
-use Zareismail\Gutenberg\Gutenberg;
-use Zareismail\Gutenberg\HasTemplate;
+use Zareismail\Gutenberg\Gutenberg; 
+use Zareismail\Gutenberg\GutenbergWidget; 
 
-abstract class SingleCategory extends Widget
-{       
-    use HasRelationships;
-    use HasTemplate;
+abstract class SingleCategory extends GutenbergWidget
+{        
+    use BootstrapsTemplate; 
+    use HasRelationships; 
+    use ResolvesDisplay;
+
+    /**
+     * The logical group associated with the template.
+     *
+     * @var string
+     */
+    public static $group = 'Other';
 
     /**
      * Indicates if the widget should be shown on the component page.
@@ -32,14 +42,60 @@ abstract class SingleCategory extends Widget
      */
     public function boot(CypressRequest $request, $layout)
     {   
-        $this->bootstrapTemplate($request, $layout);
-        $this->bootstrapContentTemplate($request, $layout);
+        parent::boot($request, $layout); 
+
+        collect(static::resources())->each(function($resource) use ($request, $layout) {
+            if ($templateKey = $this->metaValue($resource::uriKey())) {
+                $template = $this->bootstrapTemplate($request, $layout, $templateKey);
+
+                $this->displayResourceUsing(function($attributes) use ($template) {
+                    return $template->gutenbergTemplate($attributes)->render();
+                }, $resource);
+            } 
+        }); 
+
+        $pagination = $this->bootstrapTemplate($request, $layout, $this->metaValue('pagination'));
+
+        $this->displayResourceUsing(function($attributes) use ($pagination) {
+            return $pagination->gutenbergTemplate($attributes)->render();
+        }, 'pagination');
 
         $this->withMeta([
             'resource' => $request->resolveFragment()->metaValue('resource'),
-            'contents' => $this->belongsToMany('categories'),
         ]); 
     }
+
+    /**
+     * Get the fields displayed by the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return array
+     */
+    public static function fields($request)
+    {
+        return collect(static::resources())->map(function($resource) {
+            return Select::make(__('Display '.$resource::label().' By'), 'config->'.$resource::uriKey())
+                ->options(Gutenberg::cachedTemplates()->forHandler(static::handler($resource))->keyBy->getKey()->map->name)
+                ->nullable() 
+                ->displayUsingLabels()
+                ->withMeta([
+                    'placeholder' => __('Dont Display '.$resource::label())
+                ]);
+        })->merge([ 
+            Select::make(__('Display Pagination By'), 'config->pagination')
+                ->options(Gutenberg::cachedTemplates()->forHandler(Pagination::class)->keyBy->getKey()->map->name)
+                ->displayUsingLabels()
+                ->required()
+                ->rules('required'),  
+
+            Number::make(__('Display per page'), 'config->per_page')
+                ->required()
+                ->min(1)
+                ->rules('required', 'min:1')
+                ->default(15),
+        ])->toArray(); 
+    }
+    
     /**
      * Get the reated keys for the given relatinoship.
      * 
@@ -52,7 +108,7 @@ abstract class SingleCategory extends Widget
         return with($this->getParent($relationship), function($resource) {
             return $resource->descendants->map->getKey()->push($resource->getKey()); 
         });
-    }
+    } 
 
     /**
      * Get the parent model.
@@ -61,36 +117,8 @@ abstract class SingleCategory extends Widget
      * @return \Illuminate\Database\Eloquent\Model
      */
     protected function getParent(string $relationship)
-    {
-        return $this->getRequest()->resolveFragment()->metaValue('resource');
-    }
-
-    /**
-     * Bootstrap the resource for the given request.
-     * 
-     * @param  \Zareismail\Cypress\Http\Requests\CypressRequest $request 
-     * @param  \Zareismail\Cypress\Resource $layout 
-     * @return void                  
-     */
-    public function bootstrapContentTemplate(CypressRequest $request, $layout)
     { 
-        $callback =  function($template) use ($request, $layout) {
-            $template ->plugins->filter->isActive()->flatMap->gutenbergPlugins()->each->boot($request, $layout);
-        };
-
-        $this->withMeta([
-            '_content_template' => tap($this->findTemplate($this->metaValue('template.content')), $callback), 
-        ]);
-    } 
-    
-    /**
-     * Get the template id.
-     * 
-     * @return integer
-     */
-    public function getTemplateId(): int
-    {
-        return $this->metaValue('template.category');
+        return $this->metaValue('resource');
     } 
 
     /**
@@ -98,65 +126,63 @@ abstract class SingleCategory extends Widget
      * 
      * @return array
      */
-    public function serializeForTemplate(): array
+    public function serializeForDisplay(): array
     {
-        $request  = $this->getRequest(); 
-        $resource = $request->resolveFragment()->metaValue('resource');
-        $template = $this->metaValue('_content_template')->gutenbergTemplate([]);
-        $paginator = $this->metaValue('contents');
-        $contents = $paginator->getCollection()->map->serializeForWidget($request);   
+        $resource = $this->metaValue('resource');
+        $paginator = $this->belongsToMany('categories');
 
-        return array_merge($resource->serializeForWidget($request), [
-            'links' => $paginator->links('pagination::default'),
-            'contents' => $contents->reduce(function($html, $data) use ($template) {   
-                return $html . $template->setAttributes($data)->render();
-            }), 
+        return array_merge($resource->serializeForWidget($this->getRequest()), [
+            'items' => $paginator->getCollection()->map(function($item) { 
+                $resource = static::findResourceForModel($item);
+
+                return $this->displayResource( 
+                    $item->serializeForWidget($this->getRequest(), false),
+                    $resource
+                );
+            })->implode(''),
+
+            'pagination' => $this->displayResource($paginator->toArray(), 'pagination'),
         ]);
     }
 
     /**
-     * Get the fields displayed by the resource.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return array
+     * Query related templates.
+     * 
+     * @param  [type] $request [description]
+     * @param  [type] $query   [description]
+     * @return [type]          [description]
      */
-    public static function fields($request)
+    public static function relatableTemplates($request, $query)
     {
-        return [
-            Select::make(__('Category Template'), 'config->template->category')
-                ->options(static::availableTemplates(static::templateName()))
-                ->displayUsingLabels()
-                ->required()
-                ->rules('required'),
+        return $query->handledBy(
+            \Armincms\Categorizable\Gutenberg\Templates\SingleCategory::class,
+        );
+    } 
 
-            Select::make(__('Category Content Template'), 'config->template->content')
-                ->options(static::availableTemplates(static::contentTemplateName()))
-                ->displayUsingLabels()
-                ->required()
-                ->rules('required'),
-
-            // Select::make(__('Pagination Template'), 'config->template->pagination')
-            //     ->options(static::availableTemplates(Pagination::class))
-            //     ->displayUsingLabels()
-            //     ->required()
-            //     ->rules('required'),  
-        ];
+    /**
+     * Get resource for the given model.
+     * 
+     * @param  \Illuminate\Database\Eloqeunt\Model $model 
+     * @return string      
+     */
+    public static function findResourceForModel($model)
+    {
+        return collect(static::resources())->first(function($resource) use ($model) {
+            return $resource::$model === get_class($model);
+        });
     }
   
     /**
-     * Get the template name.
+     * Get the tag related content template name.
      * 
      * @return string
      */
-    public static function templateName(): string
-    {
-        return \Armincms\Categorizable\Gutenberg\Templates\SingleCategory::class;
-    }
+    abstract public static function resources(): array; 
   
     /**
-     * Get the category related content template name.
+     * Get the template handlers for given resourceName.
      * 
      * @return string
      */
-    abstract public static function contentTemplateName(): string; 
+    abstract public static function handler(string $resourceName): array;
 }
