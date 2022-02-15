@@ -101,22 +101,37 @@ class Category extends Model implements Authenticatable, HasMedia
                 'accepts'   => ['image/jpeg', 'image/jpg', 'image/png'],
             ],
         ];
-    }
-    
+    } 
+
     /**
-     * Serialize the model for pass into the client view.
+     * Serialize the model to pass into the client view for single item.
      *
      * @param Zareismail\Cypress\Request\CypressRequest
      * @return array
      */
-    public function serializeForWidget($request): array
-    { 
+    public function serializeForDetailWidget($request)
+    {
         return array_merge($this->toArray(), $this->getFirstMediasWithConversions()->toArray(), [
             'creation_date' => $this->created_at->format('Y F d'),
             'last_update'   => $this->updated_at->format('Y F d'),
             'author'=> $this->auth->fullname(), 
-            'url'   => $this->getUrl($request),
+            'url'   => $this->getUrl($request), 
         ]);
+    }
+
+    /**
+     * Serialize the model to pass into the client view for collection of items.
+     *
+     * @param Zareismail\Cypress\Request\CypressRequest
+     * @return array
+     */
+    public function serializeForIndexWidget($request)
+    {
+        return [ 
+            'name' => $this->name, 
+            'id'   => $this->id, 
+            'url'  => $this->getUrl($request) ?? collect($this->urls())->map->url->first(), 
+        ];
     }
 
     /**

@@ -132,7 +132,7 @@ abstract class SingleCategory extends GutenbergWidget
         $paginator = $this->belongsToMany('categories');
 
         return array_merge($resource->serializeForWidget($this->getRequest()), [
-            'items' => $paginator->getCollection()->map(function($item) { 
+            'contents' => $paginator->getCollection()->map(function($item) { 
                 $resource = static::findResourceForModel($item);
 
                 return $this->displayResource( 
