@@ -285,7 +285,7 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
      */
     public function getBanner()
     {
-        return $this->getConversions($this->getFirstMedia('banner'), ['main', 'thumbnail']);
+        return $this->getConversions($this->getFirstMedia('banner'), ['common-main', 'common-thumbnail']);
     }
 
     /**
@@ -295,7 +295,7 @@ abstract class Category extends Model implements Translatable, HasMedia, Authori
      */
     public function getLogo()
     {
-        return $this->getConversions($this->getFirstMedia('logo'), ['thumbnail']);
+        return $this->getConversions($this->getFirstMedia('logo'), ['common-thumbnail']);
     }
 
     /**
