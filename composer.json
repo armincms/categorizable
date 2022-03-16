@@ -7,7 +7,7 @@
     "license": "MIT",
     "require": { 
         "armincms/contract": "^1.0", 
-        "armincms/markable": "^0.1", 
+        "armincms/markable": "^1.0", 
         "kalnoy/nestedset": "^6.0",
         "whitecube/nova-flexible-content": "^0.2",
         "zareismail/complex": "^0.3"
