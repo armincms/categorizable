@@ -35,4 +35,17 @@ class Category extends Fragment implements Resolvable
             });
         });
     } 
+
+    /**
+     * Prepare the resource for JSON serialization.
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        $request = app(\Zareismail\Cypress\Http\Requests\FragmentRequest::class);
+        return array_merge(parent::jsonSerialize(), [
+            'resource' => $this->metaValue('resource')->serializeForDetailWidget($request)
+        ]);
+    }
 }
