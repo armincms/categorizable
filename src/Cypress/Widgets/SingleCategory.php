@@ -128,11 +128,10 @@ abstract class SingleCategory extends GutenbergWidget
      */
     public function serializeForDisplay(): array
     {
-        $resource = $this->metaValue('resource');
-        $paginator = $this->belongsToMany('categories');
+        $resource = $this->metaValue('resource'); 
 
         return array_merge($resource->serializeForWidget($this->getRequest()), [
-            'contents' => $paginator->getCollection()->map(function($item) { 
+            'contents' => $this->getPaginator()->getCollection()->map(function($item) { 
                 $resource = static::findResourceForModel($item);
 
                 return $this->displayResource( 
@@ -141,8 +140,20 @@ abstract class SingleCategory extends GutenbergWidget
                 );
             })->implode(''),
 
-            'pagination' => $this->displayResource($paginator->toArray(), 'pagination'),
+            'pagination' => $this->displayResource($this->getPaginator()->toArray(), 'pagination'),
         ]);
+    }
+
+    /**
+     * Get paginateg items.
+     * 
+     * @return \Illuminate\Pagination\AbstractPaginator
+     */
+    public function getPaginator()
+    {
+        return once(function() {
+            return $this->belongsToMany('categories');
+        });
     }
 
     /**
