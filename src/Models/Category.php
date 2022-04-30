@@ -111,7 +111,7 @@ class Category extends Model implements Authenticatable, HasMedia
      */
     public function serializeForDetailWidget($request)
     {
-        return array_merge($this->toArray(), $this->getFirstMediasWithConversions()->toArray(), [
+        return array_merge($this->serializeForIndexWidget($request), [
             'creation_date' => $this->created_at->format('Y F d'),
             'last_update'   => $this->updated_at->format('Y F d'),
             'author'=> $this->auth->fullname(), 
@@ -127,11 +127,11 @@ class Category extends Model implements Authenticatable, HasMedia
      */
     public function serializeForIndexWidget($request)
     {
-        return [ 
+        return array_merge($this->getFirstMediasWithConversions()->toArray(), [ 
             'name' => $this->name, 
             'id'   => $this->id, 
             'url'  => $this->getUrl($request) ?? collect($this->urls())->map->url->first(), 
-        ];
+        ]);
     }
 
     /**
