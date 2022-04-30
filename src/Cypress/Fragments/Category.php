@@ -30,7 +30,9 @@ class Category extends Fragment implements Resolvable
     public function applyQuery($request, $query)
     {
         return $query->unless(\Auth::guard('admin')->check(), function($query) {
-            return $query->published();
+            return $query->whereHas('translations', function($query) {
+                $query->published()->localize();
+            });
         });
     } 
 }
