@@ -5,9 +5,9 @@
         "armincms"
     ],
     "license": "MIT",
-    "require": { 
-        "armincms/contract": "^1.0", 
-        "armincms/markable": "^1.0", 
+    "require": {
+        "armincms/contract": "^1.0",
+        "armincms/markable": "^1.0",
         "kalnoy/nestedset": "^6.0",
         "whitecube/nova-flexible-content": "^0.2",
         "zareismail/complex": "^0.3"
@@ -19,7 +19,7 @@
     },
     "extra": {
         "laravel": {
-            "providers": [ 
+            "providers": [
                 "Armincms\\Categorizable\\ServiceProvider"
             ]
         }
@@ -29,5 +29,5 @@
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
-    "version": "2.2.0"
+    "version": "2.3.0"
 }
