@@ -89,6 +89,7 @@ class ServiceProvider extends AuthServiceProvider implements DeferrableProvider
     protected function templates()
     {   
         Gutenberg::templates([
+            \Armincms\Categorizable\Gutenberg\Templates\IndexCategory::class, 
             \Armincms\Categorizable\Gutenberg\Templates\SingleCategory::class, 
         ]); 
     }

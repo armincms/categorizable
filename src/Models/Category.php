@@ -114,7 +114,7 @@ class Category extends Model implements Authenticatable, HasMedia
         return array_merge($this->serializeForIndexWidget($request), [
             'creation_date' => $this->created_at->format('Y F d'),
             'last_update'   => $this->updated_at->format('Y F d'),
-            'author'=> $this->auth->fullname(), 
+            'author'=> optional($this->auth)->fullname(), 
             'url'   => $this->getUrl($request), 
         ]);
     }
@@ -178,5 +178,16 @@ class Category extends Model implements Authenticatable, HasMedia
         return $query->whereHas('translations', function($query) use ($uri) {
             return $query->withUri($uri);
         });
+    }
+
+    /**
+     * Create a new Eloquent Collection instance.
+     *
+     * @param  array  $models
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function newCollection(array $models = [])
+    {
+        return new Collection($models);
     }
 }
