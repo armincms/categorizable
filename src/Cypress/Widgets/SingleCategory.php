@@ -145,6 +145,23 @@ abstract class SingleCategory extends GutenbergWidget
     }
 
     /**
+     * Prepare the resource for JSON serialization.
+     *
+     * @return array
+     */
+    public function jsonSerialize()
+    {
+        return array_merge(parent::jsonSerialize(), [   
+            'name'  => $this->name, 
+            'resource'  => $this->metaValue('resource')->serializeForWidget($this->getRequest()),
+            'pagination'=> $this->getPaginator()->toArray(),
+            'contents'  => $this->getPaginator()->getCollection()->map(function($item) {
+                return $item->serializeForWidget($this->getRequest());
+            }),
+        ]);
+    } 
+
+    /**
      * Get paginateg items.
      * 
      * @return \Illuminate\Pagination\AbstractPaginator
