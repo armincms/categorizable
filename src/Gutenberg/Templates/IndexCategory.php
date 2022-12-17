@@ -1,12 +1,12 @@
 <?php
 
-namespace Armincms\Categorizable\Gutenberg\Templates; 
+namespace Armincms\Categorizable\Gutenberg\Templates;
 
-use Zareismail\Gutenberg\Template; 
+use Zareismail\Gutenberg\Template;
 use Zareismail\Gutenberg\Variable;
 
-class IndexCategory extends Template 
-{        
+class IndexCategory extends Template
+{
     /**
      * The logical group associated with the template.
      *
@@ -16,12 +16,12 @@ class IndexCategory extends Template
 
     /**
      * Register the given variables.
-     * 
+     *
      * @return array
      */
     public static function variables(): array
     {
-        return [ 
+        return [
             Variable::make('id', __('Category Id')),
 
             Variable::make('name', __('Category Name')),
@@ -44,7 +44,7 @@ class IndexCategory extends Template
 
             Variable::make('image.templateName', __(
                 'Image with the required template (example: image-category.common-main)'
-            ))
+            )),
         ];
-    } 
+    }
 }

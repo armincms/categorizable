@@ -14,7 +14,7 @@ class CreateCategoriesTranslationsTable extends Migration
     public function up()
     {
         Schema::create('categories_translations', function (Blueprint $table) {
-            $table->id(); 
+            $table->id();
             $table->foreignId('category_id')->constrained('categories');
             $table->multilingualSummary();
             $table->resourceMeta();

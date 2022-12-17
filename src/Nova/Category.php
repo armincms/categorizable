@@ -2,7 +2,6 @@
 
 namespace Armincms\Categorizable\Nova;
 
-use Armincms\Categorizable\Gutenberg\Templates\SingleCategory;
 use Armincms\Categorizable\Models\Translation;
 use Armincms\Contract\Nova\Authorizable;
 use Armincms\Contract\Nova\Fields;
@@ -10,19 +9,16 @@ use Armincms\Fields\Targomaan;
 use Illuminate\Http\Request;
 use Laravel\Nova\Fields\Badge;
 use Laravel\Nova\Fields\BelongsTo;
-use Laravel\Nova\Fields\Hidden;
 use Laravel\Nova\Fields\ID;
-use Laravel\Nova\Fields\Image;
 use Laravel\Nova\Fields\Select;
 use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Fields\Textarea;
 use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Panel;
-use Laravel\Nova\Resource as NovaResource; 
-use Zareismail\Fields\Complex; 
+use Laravel\Nova\Resource as NovaResource;
 
 class Category extends NovaResource
-{ 
+{
     use Authorizable;
     use Fields;
 
@@ -52,19 +48,19 @@ class Category extends NovaResource
     /**
      * Get the fields displayed by the resource.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  \Laravel\Nova\Http\Requests\NovaRequest  $request
      * @return array
      */
-    public function fields(Request $request)
+    public function fields(NovaRequest $request)
     {
         return [
             ID::make(__('Category ID'), 'id')->sortable(),
 
             BelongsTo::make(__('Parent Category'), 'parent', static::class)
                 ->nullable()
-                ->withoutTrashed(), 
+                ->withoutTrashed(),
 
-            Targomaan::make([ 
+            Targomaan::make([
                 Select::make(__('Category Status'), 'marked_as')
                     ->options($this->statuses($request))
                     ->required()
@@ -76,24 +72,17 @@ class Category extends NovaResource
                     ->rules('required'),
 
                 Text::make(__('Category Slug'), 'slug')
-                    ->nullable(), 
+                    ->nullable(),
 
                 Textarea::make(__('Category Summary'), 'summary')
-                    ->nullable(),  
-            ]), 
+                    ->nullable(),
+            ]),
 
-            Panel::make(__('Advanced Category Configurations'), [ 
-                Complex::make(__('Category Images'), function() {
-                    return [
-                        $this->resourceImage(__('Category Image')),
-
-                        $this->resourceImage(__('Category Logo'), 'logo'),
-
-                        $this->resourceImage(__('Category Application Image'), 'application-image'),
-
-                        $this->resourceImage(__('Category Application Logo'), 'application-logo'),
-                    ];
-                })->hideFromIndex(),
+            Panel::make(__('Advanced Category Configurations'), [
+                $this->resourceImage(__('Category Image'))->nullable(),
+                $this->resourceImage(__('Category Logo'), 'logo')->nullable(),
+                $this->resourceImage(__('Category Application Image'), 'application-image')->nullable(),
+                $this->resourceImage(__('Category Application Logo'), 'application-logo')->nullable(),
 
                 Targomaan::make([
                     $this->resourceMeta(__('Category Meta')),
@@ -113,22 +102,22 @@ class Category extends NovaResource
         $model = new Translation;
 
         return [
-            ID::make(__('Category ID'), 'id')->sortable(), 
+            ID::make(__('Category ID'), 'id')->sortable(),
 
-            Text::make(__('Category Name'), 'name'), 
+            Text::make(__('Category Name'), 'name'),
 
             $this->resourceUrls(),
 
             Badge::make(__('Category Status'), 'marked_as')
                 ->map([
                     $model->getPublishValue() => 'success',
-                    $model->getDraftValue()   => 'info',
+                    $model->getDraftValue() => 'info',
                     $model->getArchiveValue() => 'warning',
                     $model->getPendingValue() => 'danger',
                 ])
                 ->labels([
                     $model->getPublishValue() => __($model->getPublishValue()),
-                    $model->getDraftValue()   => __($model->getDraftValue()),
+                    $model->getDraftValue() => __($model->getDraftValue()),
                     $model->getArchiveValue() => __($model->getArchiveValue()),
                     $model->getPendingValue() => __($model->getPendingValue()),
                 ]),
@@ -137,9 +126,9 @@ class Category extends NovaResource
 
     /**
      * Get the category statuses.
-     * 
-     * @param  Request $request 
-     * @return array           
+     *
+     * @param  Request  $request
+     * @return array
      */
     public function statuses(Request $request)
     {
@@ -148,21 +137,21 @@ class Category extends NovaResource
         return $this->filter([
             $model->getDraftValue() => __('Store category as draft'),
 
-            $this->mergeWhen($request->user()->can('publish', $model), function() use ($model) {
+            $this->mergeWhen($request->user()->can('publish', $model), function () use ($model) {
                 return [
                     $model->getPublishValue() => __('Publish the category'),
                 ];
-            }, function() {
+            }, function () {
                 return [
                     $model->getPendingValue() => __('Request category publishing'),
                 ];
             }),
 
-            $this->mergeWhen($request->user()->can('archive', $model), function() use ($model) {
+            $this->mergeWhen($request->user()->can('archive', $model), function () use ($model) {
                 return [
                     $model->getArchiveValue() => __('Archive the category'),
                 ];
-            }), 
+            }),
         ]);
     }
 
@@ -175,7 +164,7 @@ class Category extends NovaResource
      */
     public static function indexQuery(NovaRequest $request, $query)
     {
-        return $query; 
+        return $query;
     }
 
     /**
@@ -228,5 +217,5 @@ class Category extends NovaResource
     public static function relatableCategories(NovaRequest $request, $query)
     {
         return parent::relatableQuery($request, $query)->whereKeyNot($request->resourceId);
-    } 
+    }
 }

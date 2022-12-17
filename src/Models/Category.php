@@ -1,7 +1,7 @@
 <?php
 
 namespace Armincms\Categorizable\Models;
- 
+
 use Armincms\Contract\Concerns\Authorizable;
 use Armincms\Contract\Concerns\InteractsWithFragments;
 use Armincms\Contract\Concerns\InteractsWithMedia;
@@ -9,20 +9,19 @@ use Armincms\Contract\Concerns\InteractsWithWidgets;
 use Armincms\Contract\Contracts\Authenticatable;
 use Armincms\Contract\Contracts\HasMedia;
 use Armincms\Targomaan\Concerns\InteractsWithTargomaan;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model; 
-use Illuminate\Database\Eloquent\SoftDeletes; 
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Kalnoy\Nestedset\NodeTrait;
 
 class Category extends Model implements Authenticatable, HasMedia
-{  
+{
     use Authorizable;
     use InteractsWithFragments;
     use InteractsWithMedia;
     use InteractsWithWidgets;
-    use InteractsWithTargomaan; 
-    use NodeTrait; 
-    use SoftDeletes;    
+    use InteractsWithTargomaan;
+    use NodeTrait;
+    use SoftDeletes;
 
     /**
      * The translation model.
@@ -43,7 +42,7 @@ class Category extends Model implements Authenticatable, HasMedia
 
     /**
      * Query the related GutenbergTemplate.
-     * 
+     *
      * @return \Illuminate\Database\Elqoeunt\Relations\BelongsTo
      */
     public function template()
@@ -53,8 +52,8 @@ class Category extends Model implements Authenticatable, HasMedia
 
     /**
      * Get the corresponding cypress fragment.
-     * 
-     * @return 
+     *
+     * @return
      */
     public function cypressFragment(): string
     {
@@ -63,7 +62,7 @@ class Category extends Model implements Authenticatable, HasMedia
 
     /**
      * Get the available media collections.
-     * 
+     *
      * @return array
      */
     public function getMediaCollections(): array
@@ -71,37 +70,37 @@ class Category extends Model implements Authenticatable, HasMedia
         return [
             'image' => [
                 'conversions' => ['category-image'],
-                'multiple'  => false,
-                'disk'      => 'image',
-                'limit'     => 20, // count of images
-                'accepts'   => ['image/jpeg', 'image/jpg', 'image/png'],
+                'multiple' => false,
+                'disk' => 'image',
+                'limit' => 20, // count of images
+                'accepts' => ['image/jpeg', 'image/jpg', 'image/png'],
             ],
 
             'logo' => [
                 'conversions' => ['category-logo'],
-                'multiple'  => false,
-                'disk'      => 'image',
-                'limit'     => 20, // count of images
-                'accepts'   => ['image/jpeg', 'image/jpg', 'image/png'],
+                'multiple' => false,
+                'disk' => 'image',
+                'limit' => 20, // count of images
+                'accepts' => ['image/jpeg', 'image/jpg', 'image/png'],
             ],
 
             'application-image' => [
                 'conversions' => ['application-image'],
-                'multiple'  => false,
-                'disk'      => 'image',
-                'limit'     => 20, // count of images
-                'accepts'   => ['image/jpeg', 'image/jpg', 'image/png'],
+                'multiple' => false,
+                'disk' => 'image',
+                'limit' => 20, // count of images
+                'accepts' => ['image/jpeg', 'image/jpg', 'image/png'],
             ],
 
             'application-logo' => [
                 'conversions' => ['application-logo'],
-                'multiple'  => false,
-                'disk'      => 'image',
-                'limit'     => 20, // count of images
-                'accepts'   => ['image/jpeg', 'image/jpg', 'image/png'],
+                'multiple' => false,
+                'disk' => 'image',
+                'limit' => 20, // count of images
+                'accepts' => ['image/jpeg', 'image/jpg', 'image/png'],
             ],
         ];
-    } 
+    }
 
     /**
      * Serialize the model to pass into the client view for single item.
@@ -113,9 +112,9 @@ class Category extends Model implements Authenticatable, HasMedia
     {
         return array_merge($this->serializeForIndexWidget($request), [
             'creation_date' => $this->created_at->format('Y F d'),
-            'last_update'   => $this->updated_at->format('Y F d'),
-            'author'=> optional($this->auth)->fullname(), 
-            'url'   => $this->getUrl($request), 
+            'last_update' => $this->updated_at->format('Y F d'),
+            'author' => optional($this->auth)->fullname(),
+            'url' => $this->getUrl($request),
         ]);
     }
 
@@ -127,30 +126,30 @@ class Category extends Model implements Authenticatable, HasMedia
      */
     public function serializeForIndexWidget($request)
     {
-        return array_merge($this->getFirstMediasWithConversions()->toArray(), [ 
-            'name' => $this->name, 
-            'id'   => $this->id, 
-            'url'  => $this->getUrl($request) ?? collect($this->urls())->map->url->first(), 
+        return array_merge($this->getFirstMediasWithConversions()->toArray(), [
+            'name' => $this->name,
+            'id' => $this->id,
+            'url' => $this->getUrl($request) ?? collect($this->urls())->map->url->first(),
         ]);
     }
 
     /**
      * Get the targomaan driver.
-     * 
+     *
      * @return string
      */
-    public function translator() : string
+    public function translator(): string
     {
         return 'layeric';
     }
 
     /**
      * Get the uri value.
-     * 
+     *
      * @return string
      */
     public function getUri()
-    { 
+    {
         return $this->getTranslation('uri');
     }
 
@@ -159,9 +158,9 @@ class Category extends Model implements Authenticatable, HasMedia
      *
      * @param  string  $uri
      * @param  array  $columns
-     * @return \Illuminate\Database\Eloquent\Model|static 
+     * @return \Illuminate\Database\Eloquent\Model|static
      */
-    public function findByUri($uri, $columns = ['*'])  
+    public function findByUri($uri, $columns = ['*'])
     {
         return $this->withUri($uri)->first($columns);
     }
@@ -169,13 +168,13 @@ class Category extends Model implements Authenticatable, HasMedia
     /**
      * Query where has the given uri string.
      *
-     * @param  string  $uri 
-     * @param \Illuminate\Database\Eloquent\Builder $query 
-     * @return \Illuminate\Database\Eloquent\Builder 
+     * @param  string  $uri
+     * @param  \Illuminate\Database\Eloquent\Builder  $query
+     * @return \Illuminate\Database\Eloquent\Builder
      */
     public function scopeWithUri($query, $uri)
     {
-        return $query->whereHas('translations', function($query) use ($uri) {
+        return $query->whereHas('translations', function ($query) use ($uri) {
             return $query->withUri($uri);
         });
     }
