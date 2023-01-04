@@ -15,6 +15,7 @@ use Laravel\Nova\Fields\Text;
 use Laravel\Nova\Fields\Textarea;
 use Laravel\Nova\Http\Requests\NovaRequest;
 use Laravel\Nova\Panel;
+use Laravel\Nova\Query\Search\SearchableRelation;
 use Laravel\Nova\Resource as NovaResource;
 
 class Category extends NovaResource
@@ -153,6 +154,16 @@ class Category extends NovaResource
                 ];
             }),
         ]);
+    }
+
+    /**
+     * Get the searchable columns for the resource.
+     *
+     * @return array
+     */
+    public static function searchableColumns()
+    {
+        return ['id', new SearchableRelation('translations', 'name')];
     }
 
     /**
